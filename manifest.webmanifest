@@ -1,0 +1,17 @@
+{
+  "name": "Rocío Ritual",
+  "short_name": "Rocío",
+  "description": "Mascota que crece con tus rutinas de skincare, comidas, agua y trabajo.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF6FA",
+  "theme_color": "#FFE4EF",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
