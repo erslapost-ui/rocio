@@ -171,6 +171,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .cal span.today{box-shadow:inset 0 0 0 2px var(--ink)}
 .cal span.fut{opacity:.35}
 .cal .wd{background:none;aspect-ratio:auto}
+.cal button{aspect-ratio:1;border:0;border-radius:10px;display:grid;place-items:center;font:inherit;font-size:.7rem;font-weight:800;color:var(--muted);background:var(--surface-2);padding:0;max-width:100%;cursor:pointer}
+.cal button.l1{background:var(--pink)} .cal button.l2{background:var(--lav);color:var(--ink)} .cal button.l3{background:var(--accent);color:var(--accent-ink)}
+.cal button.today{box-shadow:inset 0 0 0 2px var(--ink)}
+.cal button.edited{position:relative}
+.cal button.edited::after{content:"";position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--ink);opacity:.5}
+.ed-moods{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.ed-moods button{border:0;border-radius:14px;background:var(--surface-2);padding:6px 2px;display:grid;justify-items:center;gap:2px;font-size:.7rem;font-weight:800}
+.ed-moods button svg{width:30px;height:30px}
+.ed-moods button.on{background:var(--lav);box-shadow:inset 0 0 0 2px var(--night)}
+.ed-sum{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--surface-2);border-radius:16px;padding:10px 14px;font-weight:800}
+.ver{font-size:.76rem;color:var(--muted);text-align:center}
 .album{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .album button{border:0;padding:0;border-radius:16px;overflow:hidden;aspect-ratio:1;background:var(--surface-2);position:relative;max-width:100%}
 .album img{width:100%;height:100%;object-fit:cover;display:block}
@@ -261,6 +272,7 @@ const FOOD_TAGS=["Verdura","Fruta","Proteína","Integral","Casera"];
 const MOODS=[{v:1,t:"Agotada"},{v:2,t:"Baja"},{v:3,t:"Normal"},{v:4,t:"Bien"},{v:5,t:"Radiante"}];
 const PHOTO_TAGS=["Rostro","Zona concreta","Otro"];
 const TRIP_HOURS=7;
+const APP_VERSION="1.1";
 const ANCHOR_OPTS={morning:["Al levantarme","Lavarme los dientes","La ducha","El primer café"],night:["Cenar","Lavarme los dientes","Ponerme el pijama","Recoger la cocina"]};
 const ADJUSTS=["Acortar la rutina de noche","Dejar el agua a la vista","Hacer la rutina antes del café","Preparar los productos la noche antes","Comer una vez sin pantallas"];
 const TRAITS=[
@@ -712,8 +724,8 @@ function viewProg(){
   let cal=["L","M","X","J","V","S","D"].map(x=>`<span class="wd">${x}</span>`).join("");
   for(let i=0;i<35;i++){ const k=addDays(start,i), d=days["d-"+k], fut=k>tk;
     let lv=0; if(d&&!fut){ const r=energy(d)/goalOf(d); lv=r>=1?3:r>=.5?2:r>0?1:0; }
-    cal+=`<span class="${fut?"fut":"l"+lv}${k===tk?" today":""}" title="${esc(fmtDate(k))}">${Number(k.slice(8))}</span>`; }
-  h+=`<section class="card"><h2>Últimas semanas</h2><div class="cal">${cal}</div><p class="small muted">Cuanto más intenso el color, más gotas conseguiste ese día.</p></section>`;
+    cal+= fut? `<span class="fut">${Number(k.slice(8))}</span>` : `<button class="l${lv}${k===tk?" today":""}${d&&d.edited?" edited":""}" data-act="${k===tk?"gotoday":"editday"}" data-v="${k}" aria-label="${k===tk?"Hoy":"Editar el "+esc(fmtDate(k))}">${Number(k.slice(8))}</button>`; }
+  h+=`<section class="card"><h2>Últimas semanas</h2><div class="cal">${cal}</div><p class="small muted">Cuanto más intenso el color, más gotas conseguiste ese día. Toca un día pasado para completarlo o corregirlo; el punto indica que lo has editado.</p></section>`;
   const ph=Object.entries(photos).map(([k,p])=>Object.assign({key:k},p)).sort((a,b)=>b.ts-a.ts);
   h+=`<section class="card tint-pink"><div class="card-head"><h2>Álbum de evolución</h2><span class="num small" style="font-weight:800">${ph.length} ${ph.length===1?"foto":"fotos"}</span></div><div class="row"><button class="btn grow" data-act="photo">Hacer foto</button><button class="btn soft grow" data-act="photogal">Subir de la galería</button></div>`;
   if(ph.length>=2) h+=`<button class="btn soft sm" data-act="compare" style="justify-self:start">${compareOpen?"Ocultar comparación":"Comparar primera y última"}</button>`;
@@ -740,6 +752,7 @@ function viewSet(){
   h+=list("morning","Pasos de mañana",S.morning)+list("night","Pasos de noche",S.night);
   h+=`<section class="card tint-butter"><h2>Copia de seguridad</h2><p class="small">Tus datos y fotos viven solo en este iPhone. Guarda una copia en Archivos o iCloud de vez en cuando; si borras la app, es lo único que permite recuperarlos.</p><p class="small muted">Última copia: ${S.lastBackup?esc(fmtDate(S.lastBackup)):"nunca"}</p><div class="row"><button class="btn grow" data-act="backup">Exportar copia</button><button class="btn soft grow" data-act="restore">Restaurar copia</button></div></section>`;
   h+=`<section class="card"><h2>Cómo funciona</h2><p class="small">Cada paso de skincare, comida, prioridad de trabajo o bloque de enfoque da 1 gota; cada 2 vasos de agua dan otra y el reto de un descubrimiento, 2. Según tu ánimo, ${esc(S.name)} necesita 5, 8 o 10 gotas (4 durante tu primera semana) para irse ${TRIP_HOURS} horas de aventura (una al día) y volver con un descubrimiento. Las gotas y la constancia le dan brillo para evolucionar.</p><p class="small muted">Los pasos por defecto son ejemplos genéricos. Los descubrimientos son contenido divulgativo general y no sustituyen el consejo de un profesional sanitario.</p></section>`;
+  h+=`<p class="ver">Rocío Ritual · versión ${APP_VERSION}</p>`;
   return h;
 }
 
@@ -784,6 +797,25 @@ function obRender(){
   else h=`<div class="eyebrow">Paso 3 de 3</div><h2>¿En qué momento?</h2><p class="small">Une cada rutina a algo que ya haces. Funciona mejor que depender de un aviso.</p><h3>Mañana, después de…</h3><div class="chips">${ANCHOR_OPTS.morning.map(a=>`<button class="chip ${ob.am===a?"on":""}" data-act="ob-anchor" data-k="am" data-v="${esc(a)}">${esc(a)}</button>`).join("")}</div><input class="field" id="ob-am" type="text" value="${esc(ANCHOR_OPTS.morning.includes(ob.am)?"":ob.am)}" placeholder="U otro momento" aria-label="Otro momento para la rutina de mañana"><h3>Noche, después de…</h3><div class="chips">${ANCHOR_OPTS.night.map(a=>`<button class="chip ${ob.an===a?"on":""}" data-act="ob-anchor" data-k="an" data-v="${esc(a)}">${esc(a)}</button>`).join("")}</div><input class="field" id="ob-an" type="text" value="${esc(ANCHOR_OPTS.night.includes(ob.an)?"":ob.an)}" placeholder="U otro momento" aria-label="Otro momento para la rutina de noche"><div class="row"><button class="btn soft grow" data-act="ob-back">Atrás</button><button class="btn grow" data-act="ob-finish">¡Empezamos!</button></div>`;
   openModal(h);
 }
+let edKey=null;
+function editDayHTML(){
+  const k=edKey, d=day("d-"+k), lg=new Date(Date.parse(k+"T12:00:00")).toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"});
+  const stepList=(arr,o,kk)=> arr.length? `<div class="steps">${arr.map((s,i)=>`<button class="step ${o[s.id]?"done":""}" data-act="ed-step" data-k="${kk}" data-v="${s.id}" aria-pressed="${!!o[s.id]}"><span class="n">${i+1}</span><span class="lbl">${esc(s.t)}</span><span class="box"></span></button>`).join("")}</div>` : `<p class="small muted">Sin pasos configurados.</p>`;
+  const w=d.water||0, e=energy(d), g=goalOf(d);
+  return `<div class="eyebrow">Editar día</div><h2 style="text-transform:capitalize">${esc(lg)}</h2>
+  <div class="ed-sum"><span>${e} de ${g} gotas</span><span class="small muted">${OK.care(d)?"Cuenta para la racha":"Aún no cuenta para la racha"}</span></div>
+  <h3>Ánimo</h3><div class="ed-moods">${MOODS.map(m=>`<button class="${d.mood===m.v?"on":""}" data-act="ed-mood" data-v="${m.v}" aria-pressed="${d.mood===m.v}">${moodFace(m.v)}<span>${m.t}</span></button>`).join("")}</div>
+  <div class="card-head"><h3>Rutina de mañana</h3><button class="link-btn" data-act="ed-all" data-k="m">${mFull(d)?"Desmarcar todo":"Marcar todo"}</button></div>${stepList(S.morning,d.m,"m")}
+  <div class="card-head"><h3>Rutina de noche</h3><button class="link-btn" data-act="ed-all" data-k="n">${nFull(d)?"Desmarcar todo":"Marcar todo"}</button></div>${stepList(S.night,d.n,"n")}
+  <h3>Comidas</h3><div class="chips">${S.meals.map(x=>`<button class="chip ${d.meals[x]&&d.meals[x].done?"on":""}" data-act="ed-meal" data-v="${esc(x)}" aria-pressed="${!!(d.meals[x]&&d.meals[x].done)}">${esc(x)}</button>`).join("")}</div>
+  <div class="card-head"><h3>Agua</h3><span class="num" style="font-weight:800">${w} de 8 vasos</span></div><div class="row"><button class="btn soft grow" data-act="ed-water" data-v="${Math.max(0,w-1)}" ${w?"":"disabled"}>−1</button><button class="btn soft grow" data-act="ed-water" data-v="${Math.min(8,w+1)}" ${w>=8?"disabled":""}>+1 vaso</button></div>
+  <h3>Piel</h3><div class="chips">${SKIN.map(x=>`<button class="chip ${d.skin.includes(x)?"on":""}" data-act="ed-skin" data-v="${esc(x)}" aria-pressed="${d.skin.includes(x)}">${x}</button>`).join("")}</div>
+  <p class="small muted">Los cambios se guardan al momento. Las aventuras, retos y prioridades de trabajo de días pasados no se editan.</p>
+  <button class="btn" data-act="close">Hecho</button>`;
+}
+function openDayEditor(k){ edKey=k; openModal(editDayHTML()); }
+function edRefresh(){ const sh=$("#modal .sheet"); if(!sh) return; const y=sh.scrollTop; sh.innerHTML=editDayHTML(); sh.scrollTop=y; }
+function edSave(){ const d=day("d-"+edKey); d.edited=true; persist("d-"+edKey,d); edRefresh(); }
 function showEvolution(st){
   openModal(`<div class="stage-hero"><div class="eyebrow">¡Evolución!</div><div style="width:180px;height:180px">${petSVG({stage:st,mood:"happy"})}</div><h2>${esc(S.name)} es ahora ${esc(STAGES[st].n)}</h2><p>${esc(STAGES[st].d)}</p></div><button class="btn" data-act="close">¡Qué bonita!</button>`);
 }
@@ -849,10 +881,18 @@ document.addEventListener("click",ev=>{
   if(t){ tab=t.dataset.tab; render(); window.scrollTo(0,0); return; }
   const b=ev.target.closest("[data-act]"); if(!b||b.disabled) return;
   const a=b.dataset.act, v=b.dataset.v, d=day();
-  if(a==="closebg"){ if(ev.target===b){ closeModal(); render(); checkEvolution(); } return; }
+  if(a==="closebg"){ if(ev.target===b){ edKey=null; closeModal(); render(); checkEvolution(); } return; }
   const before=energy(), g=goalOf(d);
   switch(a){
-    case "close": closeModal(); render(); checkEvolution(); return;
+    case "close": edKey=null; closeModal(); render(); checkEvolution(); return;
+    case "editday": if(v<todayKey()) openDayEditor(v); return;
+    case "gotoday": tab="hoy"; render(); window.scrollTo(0,0); return;
+    case "ed-mood": { const e=day("d-"+edKey); e.mood= e.mood===Number(v)?null:Number(v); edSave(); return; }
+    case "ed-step": { const e=day("d-"+edKey), o=b.dataset.k==="m"?e.m:e.n; if(o[v]) delete o[v]; else o[v]=true; edSave(); return; }
+    case "ed-all": { const e=day("d-"+edKey), k2=b.dataset.k, arr=k2==="m"?S.morning:S.night, o=k2==="m"?e.m:e.n, full=arr.every(s=>o[s.id]); arr.forEach(s=>{ if(full) delete o[s.id]; else o[s.id]=true; }); edSave(); return; }
+    case "ed-meal": { const e=day("d-"+edKey), m=e.meals[v]||(e.meals[v]={done:false,note:"",tags:[]}); m.done=!m.done; edSave(); return; }
+    case "ed-water": { const e=day("d-"+edKey); e.water=Number(v); edSave(); return; }
+    case "ed-skin": { const e=day("d-"+edKey); e.skin=e.skin.includes(v)?e.skin.filter(x=>x!==v):e.skin.concat(v); edSave(); return; }
     case "pet": hearts(b); return;
     case "mood": d.mood=Number(v); saveDay(); break;
     case "sec": section=v; render(); { const p=document.querySelector(".segs"); if(p) p.scrollIntoView({block:"start",behavior:"smooth"}); } return;
@@ -940,7 +980,7 @@ document.addEventListener("change",ev=>{
   else if(el.dataset.rem&&el.value){ const [k,f]=el.dataset.rem.split("."); S.reminders[k][f]=f==="every"?Number(el.value):el.value; saveState(); toast("Recordatorio actualizado."); }
 });
 document.addEventListener("keydown",ev=>{
-  if(ev.key==="Escape"&&$("#modal").innerHTML){ closeModal(); render(); return; }
+  if(ev.key==="Escape"&&$("#modal").innerHTML){ edKey=null; closeModal(); render(); checkEvolution(); return; }
   if(ev.key!=="Enter"||!ev.target.id) return;
   if(ev.target.id==="new-goal"){ const b=document.querySelector('[data-act="addgoal"]'); if(b) b.click(); }
   else if(ev.target.id.startsWith("ms-")){ const b=document.querySelector(`[data-act="addms"][data-v="${ev.target.id.slice(3)}"]`); if(b) b.click(); }

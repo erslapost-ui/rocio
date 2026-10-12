@@ -1,5 +1,5 @@
 // Rocío Ritual · service worker: funciona sin conexión
-const VERSION = "rocio-v1";
+const VERSION = "rocio-v1.1";
 const SHELL = [
   "./",
   "./index.html",
